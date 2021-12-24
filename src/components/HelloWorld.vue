@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import { ElMessage } from 'element-plus'
 
 defineProps<{ msg: string }>();
@@ -12,9 +12,129 @@ const curDate = ''
 const toast = () => {
   ElMessage.success('Hello')
 }
+
+let point = reactive({
+  pixelSize: 28,
+  color: 'red',
+})
+
+let label = reactive({
+  text: 'Hello VueCesium',
+  pixelOffset: [0, 80],
+  fillColor: 'red',
+})
+
+const billboard = ref({
+  image: '/favicon.svg',
+  scale: 0.5,
+})
+
+const onClick = (e: any) => {
+  const image = billboard.value.image
+  if (e.type === 'onmouseover') {
+    billboard.value = {
+      image: image,
+      scale: 0.6
+    }
+  } else if (e.type === 'onmouseout') {
+    billboard.value = {
+      image: image,
+      scale: 0.5
+    }
+  }
+}
+import * as Cesium from 'cesium'
+const myTiandituToken = ref<string> ('436ce7e50d27eede2f2929307e6b33c0')
+const myTiandituCredit = ref<string>('GS(2021)1487号 - 甲测资字110047')
+interface MyConfiguration {
+  name: string,
+  scheme: Cesium.GeographicTilingScheme,
+}
+
+let conf = reactive<MyConfiguration>({
+  name: 'test',
+  scheme: new Cesium.GeographicTilingScheme(),
+})
+
 </script>
 
 <template>
+  <div class="home viewer">
+    <vc-viewer fullscreenButton>
+      <vc-layer-imagery credit="甲测资字G2021">
+        <vc-provider-imagery-tianditu
+          mapStyle="img_w"
+          :credit="myTiandituCredit"
+          :token="myTiandituToken"
+        ></vc-provider-imagery-tianditu>
+      </vc-layer-imagery>
+
+<!--      <vc-layer-imagery >-->
+<!--        <vc-provider-imagery-wmts-->
+<!--          :credit="myTiandituCredit"-->
+<!--          ref="provider"-->
+<!--          url="https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/WMTS/tile/1.0.0/World_Street_Map/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg"-->
+<!--          layer="World_Street_Map"-->
+<!--          format="image/jpeg"-->
+<!--          wmtsStyle="default"-->
+<!--          tileMatrixSetID="default028mm"-->
+<!--        ></vc-provider-imagery-wmts>-->
+<!--      </vc-layer-imagery>-->
+
+      <!-- 2. 天地图ibo（全球国界省界）图层： -->
+      <vc-layer-imagery
+        ref="layerInternationalBorders"
+        :maximum-terrain-level="10"
+      >
+        <vc-provider-imagery-wmts
+          :url="'https://{s}.tianditu.gov.cn/ibo_c/wmts?service=WMTS&version=1.0.0&request=GetTile&tilematrix={TileMatrix}&layer=ibo&style={style}&tilerow={TileRow}&tilecol={TileCol}&tilematrixset={TileMatrixSet}&format=tiles&tk='+myTiandituToken"
+          :wmtsStyle="'default'"
+          :tileMatrixSetID="'c'"
+          :credit="myTiandituCredit"
+          :subdomains="['t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7']"
+          :tilingScheme="conf.scheme"
+          :tileMatrixLabels="['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']"
+          :token="myTiandituToken"
+          :layer="'ibo'">
+        </vc-provider-imagery-wmts>
+      </vc-layer-imagery>
+
+<!--          <vc-layer-imagery>-->
+<!--            <vc-provider-imagery-tianditu-->
+<!--              mapStyle="ibo_w"-->
+<!--              :credit="myTiandituCredit"-->
+<!--              :token="myTiandituToken"-->
+<!--            ></vc-provider-imagery-tianditu>-->
+<!--          </vc-layer-imagery>-->
+<!--          <vc-layer-imagery>-->
+<!--            <vc-provider-imagery-tianditu-->
+<!--              mapStyle="cia_w"-->
+<!--              :credit="myTiandituCredit"-->
+<!--              :token="myTiandituToken"-->
+<!--            ></vc-provider-imagery-tianditu>-->
+<!--          </vc-layer-imagery>-->
+      <vc-entity
+        ref="entity"
+        :billboard="billboard"
+        :position="{ lng: 108, lat: 32 }"
+        :point="point"
+        :label="label"
+        @click="onClick"
+        @mouseover="onClick"
+        @mouseout="onClick"
+      >
+        <!-- <vc-graphics-rectangle
+          :coordinates="[130, 20, 80, 25]"
+          material="green"
+        /> -->
+      </vc-entity>
+      <!-- <vc-layer-imagery>
+        <vc-provider-imagery-osm />
+      </vc-layer-imagery> -->
+      <vc-navigation />
+    </vc-viewer>
+  </div>
+
   <h1>{{ msg }}</h1>
 
   <p>
@@ -61,3 +181,24 @@ const toast = () => {
     >unplugin-element-plus/examples/vite</a>
   </p>
 </template>
+
+<style scoped>
+a {
+  color: #42b983;
+}
+
+label {
+  margin: 0 0.5em;
+  font-weight: bold;
+}
+
+code {
+  background-color: #eee;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #304455;
+}
+.viewer {
+  height: 50vh;
+}
+</style>
